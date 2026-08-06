@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 
 import sys
+import logging
 import argparse
 import calendar
 import datetime as dt
+from bs4 import BeautifulSoup
+
+
+SKIP_WORDS = {
+    "en": "Viewed",
+    "fr": "Vous avez consulté"
+}
 
 
 def parse_file(file_path):
@@ -53,6 +61,54 @@ def parse_year(year_raw):
     raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} is not a valid year number")
 
 
+def load_file_html(file_type, file_path):
+    """
+    Open and read the entries of the given file (HTML)
+    """
+    entries = []
+
+    if file_type != "html":
+        return entries
+
+    # Open the file
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            html_doc = file.read()
+    except Exception as err:
+        logging.error(f"Could not open the file: {err}")
+        return entries
+
+    soup = BeautifulSoup(html_doc, features='html.parser')
+    for div in soup.find_all('div', class_='outer-cell mdl-cell mdl-cell--12-col mdl-shadow--2dp'):
+        header = div.find('div', class_='header-cell mdl-cell mdl-cell--12-col')
+
+        if not header or not any(ytb_class in header.get_text() for ytb_class in ("YouTube", "YouTube Music")):
+            continue
+
+        div_doc = div.find_all('div', class_='content-cell mdl-cell mdl-cell--6-col mdl-typography--body-1')
+        if not div_doc:
+            continue
+
+        body = div_doc[0]
+        text = body.get_text(' ', strip=True)
+
+        # Skip YouTube post watched history (not a video)
+        if text.startswith(tuple(SKIP_WORDS.values())):
+            continue
+
+        links = body.find_all('a')
+        if not links:
+            continue
+
+        title = links[0].get_text(strip=True)
+        author = links[1].get_text(strip=True).replace(' - Topic', '') if len(links) > 1 else "Unknown Author"
+        date = parse_date(text)
+
+        entries.append({'title': f"{title} - {author}", 'date': date})
+
+    return entries
+
+
 def parse_args():
     """
     Parse CLI arguments
@@ -86,6 +142,12 @@ def main():
     Main function
     """
     args = parse_args()
+
+    file_type, file_path = args.file_path
+    entries = load_file_html(file_type, file_path)
+    if not entries:
+        logging.info("No entries found in the file. Check if the given file is valid")
+        return 1
 
     return 0
 
