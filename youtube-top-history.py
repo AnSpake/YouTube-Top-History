@@ -227,9 +227,23 @@ def main():
 
     file_type, file_path = args.file_path
     entries = load_file_html(file_type, file_path)
+
+    # Sanity check on entries
     if not entries:
-        logging.info("No entries found in the file. Check if the given file is valid")
+        logging.error("No entries found in the file. Check if the given file is valid")
         return 1
+
+    entries_date = [e for e in entries if e['date'] is not None]
+    if not entries_date:
+        logging.error("No dated entries could be found ? Cannot regroup per time period")
+        return 1
+
+    logging.info(f"{len(entries)} videos found, {len(entries_date)} with a date")
+
+    try:
+        parse_entries(entries_date)
+    except Exception as err:
+        logging.error(f"Error while parsing entries: {err}")
 
     return 0
 
