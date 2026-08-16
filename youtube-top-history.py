@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import sys
 import logging
 import argparse
 import calendar
 import datetime as dt
+import pandas
 from bs4 import BeautifulSoup
 
 
+OUTPUT_DIR = "ytb-top-results"
 SKIP_WORDS = {
     "en": "Viewed",
     "fr": "Vous avez consulté"
@@ -222,6 +225,7 @@ def parse_args():
 def main():
     """
     Main function
+    Create output directory
     """
     args = parse_args()
 
@@ -240,10 +244,13 @@ def main():
 
     logging.info(f"{len(entries)} videos found, {len(entries_date)} with a date")
 
-    try:
-        parse_entries(entries_date)
-    except Exception as err:
-        logging.error(f"Error while parsing entries: {err}")
+        time_period = filter_time_period(args)
+
+        try:
+            os.makedirs(OUTPUT_DIR)
+            parse_entries(entries_date, args.top, time_period)
+        except Exception as err:
+            logging.error(f"Error while parsing entries: {err}")
 
     return 0
 
