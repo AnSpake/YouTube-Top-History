@@ -7,6 +7,9 @@ import logging
 import argparse
 import calendar
 import datetime as dt
+from typing import Optional
+from collections import defaultdict, Counter
+from dataclasses import dataclass
 import pandas
 import seaborn
 from bs4 import BeautifulSoup
@@ -46,6 +49,42 @@ EN_DATE_RE = re.compile(r'(?P<month>[A-Za-z])\s+(?P<day>\d{1,2}),\s+(?P<year>\d{
 def _month_to_int(month_str):
     key = month_str.lower().rstrip('.')
     return MONTHS_EN.get(key) or MONTHS_FR.get(key)
+
+
+@dataclass
+class TimePeriod:
+    """
+    Given the mess that are the available argument combinaisons,
+    using a class to help reformat the wanted time period to extract data from.
+
+    group_by: 'none' | 'month' | 'year'
+    """
+    month: Optional[int] = None
+    year: Optional[int] = None
+    group_by: str = None
+
+    def filter_entries_per_time(self, entries):
+        res = entries
+        if self.year is not None:
+            res = [entry for entry in res if entry['date'].year == self.year]
+        if self.month is not None:
+            res = [entry for entry in res if entry['date'].month == self.month]
+        return res
+
+    def group_entries_per_time(self, entries):
+        key = ""
+        groups = defaultdict(Counter)
+        for entry in self.filter_entries_per_time(entries):
+            match self.group_by:
+                case 'month':
+                    key = entry['date'].strftime('%Y-%m')
+                case 'year':
+                    key = entry['date'].strftime('%Y')
+                case _:
+                    key = 'all'
+            groups[key][entry['title']] += 1
+
+        return groups
 
 
 def figure_top_videos(data_frame, top_amount, time_period_key):
@@ -117,7 +156,7 @@ def parse_year(year_raw):
     raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} is not a valid year number")
 
 
-def parse_entries(entries, top_amount):
+def parse_entries(entries, top_amount, time_period):
     """
     Reorganize dated entries to sync up with the given time period
     Parse entries from given time period
@@ -220,6 +259,31 @@ def load_file_html(file_type, file_path):
     return entries
 
 
+def filter_time_period(args):
+    """
+    Given the numerous type of arguments
+    Unify it to a workable variable
+    We can regroup all the different cases with 2 groups
+        - Figure per month
+        - Figure per year
+    """
+    today = dt.date.today()
+
+    TIME_TABLE = [
+        (lambda a: a.today,             lambda a: TimePeriod(month=today.month, year=today.year, group_by='month')),
+        (lambda a: a.month is not None, lambda a: TimePeriod(month=a.month, year=args.year or today.year, group_by='month')),
+        (lambda a: a.year is not None,  lambda a: TimePeriod(year=args.year, group_by='year')),
+        (lambda a: a.all_month,         lambda a: TimePeriod(year=args.year or today.year, group_by='month')),
+        (lambda a: a.all_year,          lambda a: TimePeriod(group_by='year')),
+        (lambda a: a.all,               lambda a: TimePeriod(group_by='month')),
+    ]
+
+    for args_exist, filter_time in TIME_TABLE:
+        if args_exist(args):
+            return filter_time(args)
+    return TimePeriod()
+
+
 def parse_args():
     """
     Parse CLI arguments
@@ -270,13 +334,13 @@ def main():
 
     logging.info(f"{len(entries)} videos found, {len(entries_date)} with a date")
 
-        time_period = filter_time_period(args)
+    time_period = filter_time_period(args)
 
-        try:
-            os.makedirs(OUTPUT_DIR)
-            parse_entries(entries_date, args.top, time_period)
-        except Exception as err:
-            logging.error(f"Error while parsing entries: {err}")
+    try:
+        os.makedirs(OUTPUT_DIR)
+        parse_entries(entries_date, args.top, time_period)
+    except Exception as err:
+        logging.error(f"Error while parsing entries: {err}")
 
     return 0
 
