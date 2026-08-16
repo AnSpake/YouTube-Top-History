@@ -8,7 +8,9 @@ import argparse
 import calendar
 import datetime as dt
 import pandas
+import seaborn
 from bs4 import BeautifulSoup
+import matplotlib.pyplot as plt
 
 
 OUTPUT_DIR = "ytb-top-results"
@@ -44,6 +46,28 @@ EN_DATE_RE = re.compile(r'(?P<month>[A-Za-z])\s+(?P<day>\d{1,2}),\s+(?P<year>\d{
 def _month_to_int(month_str):
     key = month_str.lower().rstrip('.')
     return MONTHS_EN.get(key) or MONTHS_FR.get(key)
+
+
+def figure_top_videos(data_frame, top_amount, time_period_key):
+    """
+    Draw scoreboard of top videos
+    """
+    df_top_amount = data_frame.head(top_amount)
+    colors = seaborn.color_palette("magma", len(df_top_amount))
+
+    plt.figure()
+    df_top_amount.plot(kind='barh', x='Video', y='Plays', legend=False, color=colors)
+
+    plt.title(f"Top {top_amount} - {time_period_key}")
+    plt.xlabel("nbr of play")
+    plt.ylabel("video title")
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+
+    output_path = os.path.join(OUTPUT_DIR, f"top_{top_amount}_{time_period_key}.png")
+    plt.savefig(output_path, bbox_inches='tight')
+    plt.close()
+    logging.info(f"Figure generated for {time_period_key} -> {output_path}")
 
 
 def parse_file(file_path):
@@ -105,6 +129,8 @@ def parse_entries(entries, top_amount):
         counter = date_groups[time_period_key]
         top_videos = counter.most_common(top_amount)
         data_frame = pandas.DataFrame(top_videos, columns=['Video', 'Plays'])
+
+        figure_top_videos(data_frame, top_amount, time_period_key)
 
     return data_frame
 
