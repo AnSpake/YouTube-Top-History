@@ -131,7 +131,7 @@ class TimePeriod:
                     key = entry['date'].strftime('%Y')
                 case _:
                     key = 'all'
-            groups[key][entry['title']] += 1
+            groups[key][(entry['title'], entry['url'])] += 1
 
         return groups
 
@@ -143,18 +143,22 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
     df_top_amount = data_frame.head(top_amount)
     colors = seaborn.color_palette("magma", len(df_top_amount))
 
-    plt.figure()
-    df_top_amount.plot(kind='barh', x='Video', y='Plays', legend=False, color=colors)
+    fig, ax = plt.subplots()
+    df_top_amount.plot(kind='barh', x='Video', y='Plays', legend=False, color=colors, ax=ax)
 
-    plt.title(f"Top {top_amount} - {time_period_key}")
-    plt.xlabel("nbr of play")
-    plt.ylabel("video title")
-    plt.gca().invert_yaxis()
-    plt.tight_layout()
+    ax.set_title(f"Top {top_amount} - {time_period_key}")
+    ax.set_xlabel("nbr of play")
+    ax.set_ylabel("video title")
+    ax.invert_yaxis()
 
-    output_path = os.path.join(OUTPUT_DIR, f"top_{top_amount}_{time_period_key}.png")
-    plt.savefig(output_path, bbox_inches='tight')
-    plt.close()
+    for video, url in zip(ax.get_yticklabels(), df_top_amount['Url']):
+        video.set_url(url)
+
+    fig.tight_layout()
+
+    output_path = os.path.join(OUTPUT_DIR, f"top_{top_amount}_{time_period_key}.svg")
+    fig.savefig(output_path, bbox_inches='tight')
+    plt.close(fig)
     logging.info(f"Figure generated for {time_period_key} -> {output_path}")
 
 
@@ -216,7 +220,10 @@ def parse_entries(entries, top_amount, time_period, pbar):
     for time_period_key in sorted(date_groups.keys()):
         counter = date_groups[time_period_key]
         top_videos = counter.most_common(top_amount)
-        data_frame = pandas.DataFrame(top_videos, columns=['Video', 'Plays'])
+
+        data_frame = pandas.DataFrame([
+                {'Video': title, 'Url': url, 'Plays': plays}
+                for (title, url), plays in top_videos])
 
         figure_top_videos(data_frame, top_amount, time_period_key)
         pbar.update(1)
@@ -307,8 +314,9 @@ def load_file_html(file_type, file_path, pbar):
         title = links[0].get_text(strip=True)
         author = links[1].get_text(strip=True).replace(' - Topic', '') if len(links) > 1 else "Unknown Author"
         date = parse_date(text)
+        url = links[0].get('href')
 
-        entries.append({'title': f"{title} - {author}", 'date': date})
+        entries.append({'title': f"{title} - {author}", 'date': date, 'url': url})
         pbar.update(1)
         pbar.refresh()
 
@@ -406,7 +414,7 @@ def main():
         os.makedirs(OUTPUT_DIR)
         parse_entries(entries_date, args.top, time_period, pbar)
     except Exception as err:
-        logging.error(f"Error while parsing entries: {err}")
+        logging.exception(f"Error while parsing entries: {err}")
 
     pbar.n = pbar.total
     pbar.refresh()
