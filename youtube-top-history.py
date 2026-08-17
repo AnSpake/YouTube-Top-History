@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import sys
 import logging
 import argparse
@@ -12,6 +13,34 @@ SKIP_WORDS = {
     "en": "Viewed",
     "fr": "Vous avez consulté"
 }
+
+MONTHS_FR = {
+    'janv': 1, 'janvier': 1,
+    'fevr': 2, 'févr': 2, 'fev': 2, 'fév': 2, 'février': 2, 'fevrier': 2,
+    'mars': 3,
+    'avr': 4, 'avril': 4,
+    'mai': 5,
+    'juin': 6,
+    'juil': 7, 'juillet': 7,
+    'aout': 8, 'août': 8,
+    'sept': 9, 'septembre': 9,
+    'oct': 10, 'octobre': 10,
+    'nov': 11, 'novembre': 11,
+    'dec': 12, 'déc': 12, 'décembre': 12, 'decembre': 12,
+}
+
+MONTHS_EN = {name.lower(): i for i, name in enumerate(calendar.month_name) if name}
+MONTHS_EN.update({abbr.lower(): i for i, abbr in enumerate(calendar.month_abbr) if abbr})
+
+FR_DATE_RE = re.compile(r'(?P<day>\d{1,2})\s+(?P<month>[A-Za-zéûôàê]+)\.?\s+(?P<year>\d{4}),\s+'
+                        r'(?P<hour>\d{1,2}):(?P<minute>\d{2}):(?P<second>\d{2})')
+EN_DATE_RE = re.compile(r'(?P<month>[A-Za-z])\s+(?P<day>\d{1,2}),\s+(?P<year>\d{4}),\s+'
+                        r'(?P<hour>\d{1,2}):(?P<minute>\d{2}):(?P<second>\d{2})\s*(?P<ampm>AM|PM)?')
+
+
+def _month_to_int(month_str):
+    key = month_str.lower().rstrip('.')
+    return MONTHS_EN.get(key) or MONTHS_FR.get(key)
 
 
 def parse_file(file_path):
@@ -59,6 +88,59 @@ def parse_year(year_raw):
         raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} (No YouTube data for that year)")
 
     raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} is not a valid year number")
+
+
+def parse_entries(entries, top_amount):
+    """
+    Reorganize dated entries to sync up with the given time period
+    Parse entries from given time period
+    Return needed argument to plot figure
+    """
+    date_groups = time_period.group_entries_per_time(entries)
+
+    for time_period_key in sorted(date_groups.keys()):
+        counter = date_groups[time_period_key]
+        top_videos = counter.most_common(top_amount)
+        data_frame = pandas.DataFrame(top_videos, columns=['Video', 'Plays'])
+
+    return data_frame
+
+
+def parse_date(text):
+    """
+    Parse date from Google Takeout FR/EN
+    Return a datetime object or None if no match found
+    """
+    for pattern in (FR_DATE_RE, EN_DATE_RE):
+        match = pattern.search(text)
+        if not match:
+            continue
+
+        month = _month_to_int(match.group('month'))
+        if month is None:
+            continue
+
+        day = int(match.group('day'))
+        year = int(match.group('year'))
+        hour = int(match.group('hour'))
+        minute = int(match.group('minute'))
+        second = int(match.group('second'))
+
+        ampm = match.groupdict().get('ampm')
+        if ampm:
+            ampm = ampm.upper()
+            if ampm == 'PM' and hour != 12:
+                hour += 12
+            elif ampm == 'AM' and hour == 12:
+                hour = 0
+
+        try:
+            return dt.datetime(year, month, day, hour, minute, second)
+        except ValueError as err:
+            logging.error(f"Could not match any date, check the file: {err}")
+            continue
+
+    return None
 
 
 def load_file_html(file_type, file_path):
