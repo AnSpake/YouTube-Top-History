@@ -14,6 +14,7 @@ import pandas
 import seaborn
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 OUTPUT_DIR = "ytb-top-results"
@@ -156,7 +157,7 @@ def parse_year(year_raw):
     raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} is not a valid year number")
 
 
-def parse_entries(entries, top_amount, time_period):
+def parse_entries(entries, top_amount, time_period, pbar):
     """
     Reorganize dated entries to sync up with the given time period
     Parse entries from given time period
@@ -170,6 +171,8 @@ def parse_entries(entries, top_amount, time_period):
         data_frame = pandas.DataFrame(top_videos, columns=['Video', 'Plays'])
 
         figure_top_videos(data_frame, top_amount, time_period_key)
+        pbar.update(1)
+        pbar.refresh()
 
     return data_frame
 
@@ -211,7 +214,7 @@ def parse_date(text):
     return None
 
 
-def load_file_html(file_type, file_path):
+def load_file_html(file_type, file_path, pbar):
     """
     Open and read the entries of the given file (HTML)
     """
@@ -229,6 +232,9 @@ def load_file_html(file_type, file_path):
         return entries
 
     soup = BeautifulSoup(html_doc, features='html.parser')
+    pbar.update(20)
+    pbar.refresh()
+
     for div in soup.find_all('div', class_='outer-cell mdl-cell mdl-cell--12-col mdl-shadow--2dp'):
         header = div.find('div', class_='header-cell mdl-cell mdl-cell--12-col')
 
@@ -255,6 +261,8 @@ def load_file_html(file_type, file_path):
         date = parse_date(text)
 
         entries.append({'title': f"{title} - {author}", 'date': date})
+        pbar.update(1)
+        pbar.refresh()
 
     return entries
 
@@ -320,7 +328,10 @@ def main():
     args = parse_args()
 
     file_type, file_path = args.file_path
-    entries = load_file_html(file_type, file_path)
+
+    pbar = tqdm(range(50000))
+
+    entries = load_file_html(file_type, file_path, pbar)
 
     # Sanity check on entries
     if not entries:
@@ -335,13 +346,17 @@ def main():
     logging.info(f"{len(entries)} videos found, {len(entries_date)} with a date")
 
     time_period = filter_time_period(args)
+    pbar.update(5)
+    pbar.refresh()
 
     try:
         os.makedirs(OUTPUT_DIR)
-        parse_entries(entries_date, args.top, time_period)
+        parse_entries(entries_date, args.top, time_period, pbar)
     except Exception as err:
         logging.error(f"Error while parsing entries: {err}")
 
+    pbar.n = pbar.total
+    pbar.refresh()
     return 0
 
 
