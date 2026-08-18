@@ -76,6 +76,7 @@ def setup_compatible_font():
     """
     XXX
     """
+    plt.rcParams['svg.fonttype'] = 'none'
     font_available = {f.name for f in fm.fontManager.ttflist}
 
     EXTRA_FONT = find_extra_font(font_available)
@@ -152,13 +153,24 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
     ax.invert_yaxis()
 
     for video, url in zip(ax.get_yticklabels(), df_top_amount['Url']):
-        video.set_url(url)
+        if url:
+            video.set_url(url)
+            video.set_color("#0645AD")
+            video.set_fontweight("normal")
 
     fig.tight_layout()
 
     output_path = os.path.join(OUTPUT_DIR, f"top_{top_amount}_{time_period_key}.svg")
     fig.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
+
+    with open(output_path, 'r+', encoding='utf-8') as file:
+        svg = file.read()
+        svg = svg.replace("</svg>", "<style>text { text-decoration: underline; }</style></svg>")
+        file.seek(0)
+        file.write(svg)
+        file.truncate()
+
     logging.info(f"Figure generated for {time_period_key} -> {output_path}")
 
 
