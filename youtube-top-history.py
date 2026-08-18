@@ -144,7 +144,12 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
     df_top_amount = data_frame.head(top_amount)
     colors = seaborn.color_palette("magma", len(df_top_amount))
 
-    fig, ax = plt.subplots()
+    row_height = 0.5
+    min_height = 4
+    fig_height = max(min_height,  row_height * len(df_top_amount))
+    fig_width = 10
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height), constrained_layout=True)
     df_top_amount.plot(kind='barh', x='Video', y='Plays', legend=False, color=colors, ax=ax)
 
     ax.set_title(f"Top {top_amount} - {time_period_key}")
@@ -157,8 +162,6 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
             video.set_url(url)
             video.set_color("#0645AD")
             video.set_fontweight("normal")
-
-    fig.tight_layout()
 
     output_path = os.path.join(OUTPUT_DIR, f"top_{top_amount}_{time_period_key}.svg")
     fig.savefig(output_path, bbox_inches='tight')
