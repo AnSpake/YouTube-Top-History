@@ -132,7 +132,7 @@ class TimePeriod:
                     key = entry['date'].strftime('%Y')
                 case _:
                     key = 'all'
-            groups[key][(entry['title'], entry['url'])] += 1
+            groups[key][(entry['title'], entry['author'], entry['url'])] += 1
 
         return groups
 
@@ -237,8 +237,12 @@ def parse_entries(entries, top_amount, time_period, pbar):
         top_videos = counter.most_common(top_amount)
 
         data_frame = pandas.DataFrame([
-                {'Video': title, 'Url': url, 'Plays': plays}
-                for (title, url), plays in top_videos])
+                {
+                    'Video': f"{title}\n{author}",
+                    'Url': url,
+                    'Plays': plays
+                }
+                for (title, author, url), plays in top_videos])
 
         figure_top_videos(data_frame, top_amount, time_period_key)
         pbar.update(1)
@@ -331,7 +335,7 @@ def load_file_html(file_type, file_path, pbar):
         date = parse_date(text)
         url = links[0].get('href')
 
-        entries.append({'title': f"{title} - {author}", 'date': date, 'url': url})
+        entries.append({'title': title, 'author': author, 'date': date, 'url': url})
         pbar.update(1)
         pbar.refresh()
 
