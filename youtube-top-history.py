@@ -165,21 +165,30 @@ def add_authors(ax, authors):
     Another overkill function to add the author in the second row while
     not make it have the same text properties as the title (url click-able and
     blue color)
+    Also make the y label print on the top of the "list"
     """
     fig = ax.figure
     fig.canvas.draw()
     renderer = fig.canvas.get_renderer()
+    labels = ax.get_yticklabels()
 
     for label, author in zip(ax.get_yticklabels(), authors):
         x, y = label.get_position()
-        bbox = label.get_window_extent(renderer=renderer)
 
-        logging.info(f"Font size = {label.get_fontsize()} et bbox = {bbox.height}")
-
-        ax.annotate(author, xy=(x, y), xytext=(0, -bbox.height),
-                    textcoords="offset pixels",
-                    ha="right", va="top",
+        ax.annotate(author, xy=(x, y), xytext=(-1, 0),
+                    textcoords='offset fontsize',
+                    ha='right', va='top',
                     fontsize=label.get_fontsize())
+
+    # Add "video title" y label above the items
+    first_label = labels[0]
+    flabel_fontsize = first_label.get_fontsize()
+    bbox = first_label.get_window_extent(renderer=renderer)
+
+    x_fig, y_fig = fig.transFigure.inverted().transform((bbox.x1 - flabel_fontsize, bbox.y1 + flabel_fontsize * 2))
+    fig.text(x_fig, y_fig, "video title",
+             ha='right', va='bottom',
+             fontsize=flabel_fontsize)
 
 
 def figure_top_videos(data_frame, top_amount, time_period_key):
@@ -200,12 +209,19 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
 
     ax.set_title(f"Top {top_amount} - {time_period_key}")
     ax.set_xlabel("nbr of play")
-    ax.set_ylabel("video title")
+
     ax.invert_yaxis()
 
     add_authors(ax, df_top_amount['Author'])
+    bars = ax.patches
 
-    for video, url in zip(ax.get_yticklabels(), df_top_amount['Url']):
+    for video, url, b in zip(ax.get_yticklabels(), df_top_amount['Url'], bars):
+        x = video.get_position()[0]
+        y = b.get_y() + b.get_height()
+
+        video.set_position((x, y))
+        video.set_va("bottom")
+
         if url:
             video.set_url(url)
             video.set_color("#0645AD")
