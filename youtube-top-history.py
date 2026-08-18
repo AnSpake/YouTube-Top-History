@@ -420,6 +420,11 @@ def main():
     """
     args = parse_args()
 
+    # Preference for manual deletion/overwrite
+    if os.path.exists(OUTPUT_DIR):
+        logging.error(f"Result folder {OUTPUT_DIR} -> Delete it to proceed.")
+        return 1
+
     file_type, file_path = args.file_path
 
     pbar = tqdm(range(50000))
