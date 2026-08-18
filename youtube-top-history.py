@@ -10,6 +10,7 @@ import datetime as dt
 from typing import Optional
 from collections import defaultdict, Counter
 from dataclasses import dataclass
+import xml.etree.ElementTree as ET
 import pandas
 import seaborn
 from bs4 import BeautifulSoup
@@ -137,6 +138,28 @@ class TimePeriod:
         return groups
 
 
+def underline_title_link_svg(output_path):
+    """
+    Overkill function to underline the click-able title video
+    by editing the svg file
+    Pros: don't depend on matplot if they change the output of the svg file
+    """
+    ET.register_namespace("", "http://www.w3.org/2000/svg")
+    ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+
+    xml_tree = ET.parse(output_path)
+    xml_root = xml_tree.getroot()
+
+    namespace = "{http://www.w3.org/2000/svg}"
+
+    for link in xml_root.iter(namespace + "a"):
+        for text in link.iter(namespace + "text"):
+            style = text.get("style", "")
+            text.set("style", style + ";text-decoration:underline")
+
+    xml_tree.write(output_path, encoding="utf-8", xml_declaration=True)
+
+
 def figure_top_videos(data_frame, top_amount, time_period_key):
     """
     Draw scoreboard of top videos
@@ -167,12 +190,7 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
     fig.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
-    with open(output_path, 'r+', encoding='utf-8') as file:
-        svg = file.read()
-        svg = svg.replace("</svg>", "<style>text { text-decoration: underline; }</style></svg>")
-        file.seek(0)
-        file.write(svg)
-        file.truncate()
+    underline_title_link_svg(output_path)
 
     logging.info(f"Figure generated for {time_period_key} -> {output_path}")
 
