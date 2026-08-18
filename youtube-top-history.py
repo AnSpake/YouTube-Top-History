@@ -160,6 +160,28 @@ def underline_title_link_svg(output_path):
     xml_tree.write(output_path, encoding="utf-8", xml_declaration=True)
 
 
+def add_authors(ax, authors):
+    """
+    Another overkill function to add the author in the second row while
+    not make it have the same text properties as the title (url click-able and
+    blue color)
+    """
+    fig = ax.figure
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+
+    for label, author in zip(ax.get_yticklabels(), authors):
+        x, y = label.get_position()
+        bbox = label.get_window_extent(renderer=renderer)
+
+        logging.info(f"Font size = {label.get_fontsize()} et bbox = {bbox.height}")
+
+        ax.annotate(author, xy=(x, y), xytext=(0, -bbox.height),
+                    textcoords="offset pixels",
+                    ha="right", va="top",
+                    fontsize=label.get_fontsize())
+
+
 def figure_top_videos(data_frame, top_amount, time_period_key):
     """
     Draw scoreboard of top videos
@@ -173,12 +195,15 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
     fig_width = 10
 
     fig, ax = plt.subplots(figsize=(fig_width, fig_height), constrained_layout=True)
+
     df_top_amount.plot(kind='barh', x='Video', y='Plays', legend=False, color=colors, ax=ax)
 
     ax.set_title(f"Top {top_amount} - {time_period_key}")
     ax.set_xlabel("nbr of play")
     ax.set_ylabel("video title")
     ax.invert_yaxis()
+
+    add_authors(ax, df_top_amount['Author'])
 
     for video, url in zip(ax.get_yticklabels(), df_top_amount['Url']):
         if url:
@@ -256,7 +281,8 @@ def parse_entries(entries, top_amount, time_period, pbar):
 
         data_frame = pandas.DataFrame([
                 {
-                    'Video': f"{title}\n{author}",
+                    'Video': title,
+                    'Author': author,
                     'Url': url,
                     'Plays': plays
                 }
