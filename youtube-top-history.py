@@ -14,8 +14,18 @@ import pandas
 import seaborn
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 from tqdm import tqdm
 
+
+FONT_COMPATIBLE = [
+    "Noto Sans",
+    "Droid Sans Fallback",
+    "IPAexGothic", "IPAGothic",
+    "Yu Gothic", "MS Gothic",
+    "Hiragino Sans", "Hiragino Kaku Gothic Pro",
+    "WenQuanYi Zen Hei", "Microsoft YaHei"
+]
 
 OUTPUT_DIR = "ytb-top-results"
 SKIP_WORDS = {
@@ -50,6 +60,44 @@ EN_DATE_RE = re.compile(r'(?P<month>[A-Za-z])\s+(?P<day>\d{1,2}),\s+(?P<year>\d{
 def _month_to_int(month_str):
     key = month_str.lower().rstrip('.')
     return MONTHS_EN.get(key) or MONTHS_FR.get(key)
+
+
+def find_extra_font(font_available):
+    """
+    XXXX
+    """
+    for font in FONT_COMPATIBLE:
+        if font in font_available:
+            return font
+    return None
+
+
+def setup_compatible_font():
+    """
+    XXX
+    """
+    font_available = {f.name for f in fm.fontManager.ttflist}
+
+    EXTRA_FONT = find_extra_font(font_available)
+
+    if EXTRA_FONT:
+        current_font = plt.rcParams['font.family']
+
+        # Noto Sans | Droid Sans Fallback | DejaVu Sans
+        fonts = [
+            font for font in (
+                EXTRA_FONT,
+                FONT_COMPATIBLE[1],
+                *current_font)
+            if font in font_available
+        ]
+
+        plt.rcParams['font.family'] = fonts
+
+    else:
+        logging.warning(
+            "Warning: no CJK font found on this system so titles with foreign letters will show as missing glyps -> □."
+            "After installing the missing font, refresh your system's font cache AND matplotlib cache.")
 
 
 @dataclass
@@ -330,6 +378,11 @@ def main():
     file_type, file_path = args.file_path
 
     pbar = tqdm(range(50000))
+
+    # Handle special characters
+    setup_compatible_font()
+    pbar.update(5)
+    pbar.refresh()
 
     entries = load_file_html(file_type, file_path, pbar)
 
