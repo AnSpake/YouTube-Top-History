@@ -18,8 +18,9 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from tqdm import tqdm
 
+
 # FIXME: Uncomment/modify as needed
-# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 FONT_COMPATIBLE = [
     "Noto Sans",
@@ -278,11 +279,10 @@ def parse_month(month_raw):
             return month
         raise argparse.ArgumentTypeError(f"Invalid month: {month_raw} is not a valid month number")
 
-    MONTHS = {month_str.lower(): i for i, month_str in enumerate(calendar.month_name) if month_str}
-    MONTHS.update({abbr.lower(): i for i, abbr in enumerate(calendar.month_abbr) if abbr})
-    month = MONTHS.get(month_raw)
+    month = _month_to_int(month_raw)
     if month is not None:
         return month
+
     raise argparse.ArgumentTypeError(f"Invalid month: {month_raw} is not a valid month name")
 
 
