@@ -42,7 +42,7 @@ pip install -r requirements.txt
 ```
 `-h/--help`: Print usage
 `--file-path [STRING]`: Path to your watch\_history file
-`--top [INTEGER]`: Number of top videos for the scoreboard, recommend 10, 50, 100
+`--top [INTEGER]`: Number of top videos for the scoreboard, recommend 10, 50, 100 (default is 10)
 `--today`: Get the scoreboard of this month
 `--month [01-12] or --month [STRING]`: Get the scoreboard of specified month
 `--year [INTEGER]`: Get the scoreboard of the specified year
@@ -50,11 +50,17 @@ pip install -r requirements.txt
 `--all-year`: Get the scoreboard for each years
 `--all`: Get the scoreboard for each years + each months of every years
 
+### Examples
+Get the scoreboard of the current month
+```bash
+./youtube-top-history.py --file-path watch-history.html --today
+```
+
 ## TODO
-- [ ] Clickable links inside the output pictures
+- [X] Clickable links inside the output pictures
 - [ ] Read JSON format ?
 - [ ] --history option to get the scoreboard from your full history on youtube
-- [ ] Pretty progress bar
+- [X] Pretty progress bar
 
 ## Authors
 Amandine N. "AnSpake" <AnSpake@proton.me>  
