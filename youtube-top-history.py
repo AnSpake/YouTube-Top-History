@@ -66,10 +66,7 @@ def _month_to_int(month_str):
     return MONTHS_EN.get(key) or MONTHS_FR.get(key)
 
 
-def find_extra_font(font_available):
-    """
-    XXXX
-    """
+def _find_extra_font(font_available):
     for font in FONT_COMPATIBLE:
         if font in font_available:
             return font
@@ -78,7 +75,9 @@ def find_extra_font(font_available):
 
 def setup_compatible_font():
     """
-    XXX
+    Search for available font on the system and if there is any compatible to
+    handle missing glyph.
+    Depends on the fonts installed on your system.
     """
     plt.rcParams['svg.fonttype'] = 'none'
     font_available = {f.name for f in fm.fontManager.ttflist}
@@ -160,18 +159,18 @@ def underline_title_link_svg(output_path):
     by editing the svg file
     Pros: don't depend on matplot if they change the output of the svg file
     """
-    ET.register_namespace("", "http://www.w3.org/2000/svg")
-    ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+    ET.register_namespace('', "http://www.w3.org/2000/svg")
+    ET.register_namespace('xlink', "http://www.w3.org/1999/xlink")
 
     xml_tree = ET.parse(output_path)
     xml_root = xml_tree.getroot()
 
     namespace = "{http://www.w3.org/2000/svg}"
 
-    for link in xml_root.iter(namespace + "a"):
-        for text in link.iter(namespace + "text"):
-            style = text.get("style", "")
-            text.set("style", style + ";text-decoration:underline")
+    for link in xml_root.iter(namespace + 'a'):
+        for text in link.iter(namespace + 'text'):
+            style = text.get('style', "")
+            text.set('style', style + ";text-decoration:underline")
 
     xml_tree.write(output_path, encoding="utf-8", xml_declaration=True)
 
@@ -212,7 +211,7 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
     Draw scoreboard of top videos
     """
     df_top_amount = data_frame.head(top_amount)
-    colors = seaborn.color_palette("magma", len(df_top_amount))
+    colors = seaborn.color_palette('magma', len(df_top_amount))
 
     row_height = 0.5
     min_height = 4
@@ -240,12 +239,12 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
         y = b.get_y() + b.get_height()
 
         video.set_position((x, y))
-        video.set_va("bottom")
+        video.set_va('bottom')
 
         if url:
             video.set_url(url)
             video.set_color("#0645AD")
-            video.set_fontweight("normal")
+            video.set_fontweight('normal')
 
     output_path = os.path.join(OUTPUT_DIR, f"top_{top_amount}_{time_period_key}.svg")
     fig.savefig(output_path, bbox_inches='tight')
@@ -456,7 +455,7 @@ def parse_args():
                         help="Path to your watch_history file")
     parser.add_argument('--top', required=False, type=int, default=10,
                         help="Number of top videos for the scoreboard")
-    parser.add_argument('--today', required=False, action="store_true", default=False,
+    parser.add_argument('--today', required=False, action='store_true', default=False,
                         help="Get the scoreboard of the current month")
 
     parser.add_argument('--month', required=False, type=parse_month,
@@ -464,11 +463,11 @@ def parse_args():
     parser.add_argument('--year', required=False, type=parse_year,
                         help="Get the scoreboard of the given year")
 
-    parser.add_argument('--all-month', required=False, action="store_true", default=False,
+    parser.add_argument('--all-month', required=False, action='store_true', default=False,
                         help="Get the scoreboard for each month of current/given year")
     parser.add_argument('--all-year', required=False, action="store_true", default=False,
                         help="Get the scoreboard for each years")
-    parser.add_argument('--all', required=False, action="store_true", default=False,
+    parser.add_argument('--all', required=False, action='store_true', default=False,
                         help="Get the scoreboard for each years + each months of every years")
 
     args = parser.parse_args()
