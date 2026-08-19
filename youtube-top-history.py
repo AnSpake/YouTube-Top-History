@@ -22,6 +22,7 @@ from tqdm import tqdm
 FONT_COMPATIBLE = [
     "Noto Sans",
     "Droid Sans Fallback",
+    "Noto Sans Math",
     "IPAexGothic", "IPAGothic",
     "Yu Gothic", "MS Gothic",
     "Hiragino Sans", "Hiragino Kaku Gothic Pro",
@@ -85,14 +86,27 @@ def setup_compatible_font():
     if EXTRA_FONT:
         current_font = plt.rcParams['font.family']
 
-        # Noto Sans | Droid Sans Fallback | DejaVu Sans
-        fonts = [
-            font for font in (
-                EXTRA_FONT,
-                FONT_COMPATIBLE[1],
-                *current_font)
-            if font in font_available
-        ]
+        # Configuration per system allow more flexibility in handling specific cases
+        match sys.platform:
+            case "linux":
+                fonts = [
+                    font for font in (
+                        EXTRA_FONT,
+                        FONT_COMPATIBLE[1],
+                        FONT_COMPATIBLE[2],
+                        *current_font)
+                    if font in font_available
+                        ]
+            # case "darwin": FIXME
+            # case for windows FIXME
+            case _:
+                fonts = [
+                    font for font in (
+                        EXTRA_FONT,
+                        FONT_COMPATIBLE[1],
+                        *current_font)
+                    if font in font_available
+                        ]
 
         plt.rcParams['font.family'] = fonts
 
