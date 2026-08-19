@@ -319,14 +319,11 @@ def parse_year(year_raw):
     raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} is not a valid year number")
 
 
-def load_json(file_type, file_path):
+def load_json(file_path):
     """
     Open and red the entries of the given file (JSON)
     """
     entries = []
-
-    if file_type != "json":
-        return entries
 
     # Open the file
     try:
@@ -434,14 +431,11 @@ def parse_date(text):
     return None
 
 
-def load_file_html(file_type, file_path, pbar):
+def load_file_html(file_path, pbar):
     """
     Open and read the entries of the given file (HTML)
     """
     entries = []
-
-    if file_type != "html":
-        return entries
 
     # Open the file
     try:
@@ -562,7 +556,7 @@ def main():
     pbar.update(5)
     pbar.refresh()
 
-    entries = load_file_html(file_type, file_path, pbar)
+    entries = load_file_html(file_path, pbar) if file_type == 'html' else load_json(file_path)
 
     # Sanity check on entries
     if not entries:
