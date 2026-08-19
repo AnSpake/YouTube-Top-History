@@ -11,6 +11,7 @@ from typing import Optional
 from collections import defaultdict, Counter
 from dataclasses import dataclass
 import xml.etree.ElementTree as ET
+from pathlib import Path
 import pandas
 import seaborn
 from bs4 import BeautifulSoup
@@ -23,15 +24,16 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO)
 
 FONT_COMPATIBLE = [
-    "Noto Sans",
+    "Noto Sans", "Noto Sans Math",
     "Droid Sans Fallback",
-    "Noto Sans Math",
+    "Symbola",
     "IPAexGothic", "IPAGothic",
     "Yu Gothic", "MS Gothic",
     "Hiragino Sans", "Hiragino Kaku Gothic Pro",
     "WenQuanYi Zen Hei", "Microsoft YaHei"
 ]
 
+CUSTOM_FONT_DIR = "extra-fonts"
 OUTPUT_DIR = "ytb-top-results"
 SKIP_WORDS = {
     "en": "Viewed",
@@ -67,6 +69,11 @@ def _month_to_int(month_str):
     return MONTHS_EN.get(key) or MONTHS_FR.get(key)
 
 
+def _add_custom_fonts():
+    for font in (Path(__file__).parent / CUSTOM_FONT_DIR).glob("*.[ot]tf"):
+        fm.fontManager.addfont(font)
+
+
 def _find_extra_font(font_available):
     for font in FONT_COMPATIBLE:
         if font in font_available:
@@ -80,7 +87,11 @@ def setup_compatible_font():
     handle missing glyph.
     Depends on the fonts installed on your system.
     """
-    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['svg.fonttype'] = 'path'
+
+    # FIXME: (Linux) Emoji font compatible with Matplotlib
+    _add_custom_fonts()
+
     font_available = {f.name for f in fm.fontManager.ttflist}
 
     EXTRA_FONT = _find_extra_font(font_available)
@@ -96,6 +107,7 @@ def setup_compatible_font():
                         EXTRA_FONT,
                         FONT_COMPATIBLE[1],
                         FONT_COMPATIBLE[2],
+                        FONT_COMPATIBLE[3],
                         *current_font)
                     if font in font_available
                         ]
@@ -105,7 +117,7 @@ def setup_compatible_font():
                 fonts = [
                     font for font in (
                         EXTRA_FONT,
-                        FONT_COMPATIBLE[1],
+                        FONT_COMPATIBLE[2],
                         *current_font)
                     if font in font_available
                         ]
