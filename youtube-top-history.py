@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from tqdm import tqdm
 
+# FIXME: Uncomment/modify as needed
+# logging.basicConfig(level=logging.INFO)
 
 FONT_COMPATIBLE = [
     "Noto Sans",
