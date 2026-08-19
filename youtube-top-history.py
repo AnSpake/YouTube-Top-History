@@ -221,8 +221,12 @@ def figure_top_videos(data_frame, top_amount, time_period_key):
 
     df_top_amount.plot(kind='barh', x='Video', y='Plays', legend=False, color=colors, ax=ax)
 
+    for i, v in enumerate(df_top_amount['Plays']):
+        plt.text(v, i, str(v))
+
     ax.set_title(f"Top {top_amount} - {time_period_key}")
     ax.set_xlabel("nbr of play")
+    ax.set_ylabel("")
 
     ax.invert_yaxis()
 
