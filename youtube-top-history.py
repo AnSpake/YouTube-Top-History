@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import json
 import logging
 import argparse
 import calendar
@@ -38,6 +39,10 @@ OUTPUT_DIR = "ytb-top-results"
 SKIP_WORDS = {
     "en": "Viewed",
     "fr": "Vous avez consulté"
+}
+WATCH_PREFIX = {
+    "en": "Watched ",
+    "fr": "Vous avez regardé "
 }
 
 MONTHS_FR = {
@@ -312,6 +317,56 @@ def parse_year(year_raw):
         raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} (No YouTube data for that year)")
 
     raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} is not a valid year number")
+
+
+def load_json(file_type, file_path):
+    """
+    Open and red the entries of the given file (JSON)
+    """
+    entries = []
+
+    if file_type != "json":
+        return entries
+
+    # Open the file
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            json_doc = json.load(file)
+    except Exception as err:
+        logging.error(f"Could not open the file: {err}")
+        return entries
+
+    for entry in json_doc:
+        if 'header' not in entry or "YouTube" not in entry['header']:
+            continue
+
+        title = entry.get('title', '')
+
+        if title.startswith(tuple(SKIP_WORDS.values())):
+            continue
+
+        prefix = next((p for p in WATCH_PREFIX.values() if title.startswith(p)), '')
+        title = title.removeprefix(prefix)
+
+        if 'subtitles' in entry and entry['subtitles']:
+            author = entry['subtitles'][0].get('name', "Unknown Channel").replace(' - Topic', '')
+        else:
+            author = "Unknown Channel"
+
+        date = None
+        time_raw = entry.get('time')
+        if time_raw:
+            try:
+                date = dt.datetime.fromisoformat(time_raw.replace('Z', '+00:00'))
+            except (ValueError, TypeError):
+                date = None
+
+        url = None
+        if 'titleUrl' in entry:
+            url = entry.get('titleUrl', '')
+        entries.append({'title': title, 'author': author, 'date': date, 'url': url})
+
+    return entries
 
 
 def parse_entries(entries, top_amount, time_period, pbar):
