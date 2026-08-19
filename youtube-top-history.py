@@ -21,13 +21,19 @@ import matplotlib.font_manager as fm
 from tqdm import tqdm
 
 
-# FIXME: Uncomment/modify as needed
+# NOTE: Uncomment/modify as needed
 logging.basicConfig(level=logging.INFO)
 
+# NOTE: Add your font here, in priority order for fallback
 FONT_COMPATIBLE = [
     "Noto Sans", "Noto Sans Math",
     "Droid Sans Fallback",
     "Symbola",
+    "Noto Sans Bengali",
+    "Noto Sans Telugu",
+]
+
+FONT_MAYBE_COMPATIBLE = [
     "IPAexGothic", "IPAGothic",
     "Yu Gothic", "MS Gothic",
     "Hiragino Sans", "Hiragino Kaku Gothic Pro",
@@ -94,7 +100,7 @@ def setup_compatible_font():
     """
     plt.rcParams['svg.fonttype'] = 'path'
 
-    # FIXME: (Linux) Emoji font compatible with Matplotlib
+    # NOTE: (Linux) Emoji font compatible with Matplotlib
     _add_custom_fonts()
 
     font_available = {f.name for f in fm.fontManager.ttflist}
@@ -107,15 +113,13 @@ def setup_compatible_font():
         # Configuration per system allow more flexibility in handling specific cases
         match sys.platform:
             case "linux":
-                fonts = [
+                fonts = list(dict.fromkeys(
                     font for font in (
                         EXTRA_FONT,
-                        FONT_COMPATIBLE[1],
-                        FONT_COMPATIBLE[2],
-                        FONT_COMPATIBLE[3],
+                        *FONT_COMPATIBLE,
                         *current_font)
                     if font in font_available
-                        ]
+                        ))
             # case "darwin": FIXME
             # case for windows FIXME
             case _:
