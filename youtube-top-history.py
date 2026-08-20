@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 FONT_COMPATIBLE = [
     "Noto Sans", "Noto Sans Math",
     "Droid Sans Fallback",
-    "Symbola",
+    "Twemoji Mozilla",
     "Noto Sans Bengali",
     "Noto Sans Telugu",
 ]
