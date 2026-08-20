@@ -323,7 +323,7 @@ def parse_year(year_raw):
     raise argparse.ArgumentTypeError(f"Invalid year: {year_raw} is not a valid year number")
 
 
-def load_json(file_path):
+def load_file_json(file_path):
     """
     Open and red the entries of the given file (JSON)
     """
@@ -350,7 +350,7 @@ def load_json(file_path):
         title = title.removeprefix(prefix)
 
         if 'subtitles' in entry and entry['subtitles']:
-            author = entry['subtitles'][0].get('name', "Unknown Channel").replace(' - Topic', '')
+            author = entry['subtitles'][0].get('name', "Unknown Channel")
         else:
             author = "Unknown Channel"
 
@@ -571,7 +571,7 @@ def main():
     pbar.update(5)
     pbar.refresh()
 
-    entries = load_file_html(file_path, pbar) if file_type == 'html' else load_json(file_path)
+    entries = load_file_html(file_path, pbar) if file_type == 'html' else load_file_json(file_path)
 
     # Sanity check on entries
     if not entries:
