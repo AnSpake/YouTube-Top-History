@@ -377,7 +377,6 @@ def parse_entries(entries, top_amount, time_period, pbar):
     Return needed argument to plot figure
     """
     date_groups = time_period.group_entries_per_time(entries)
-
     for time_period_key in sorted(date_groups.keys()):
         counter = date_groups[time_period_key]
         top_videos = counter.most_common(top_amount)
@@ -497,18 +496,28 @@ def filter_time_period(args):
     today = dt.date.today()
 
     TIME_TABLE = [
-        (lambda a: a.today,             lambda a: TimePeriod(month=today.month, year=today.year, group_by='month')),
-        (lambda a: a.month is not None, lambda a: TimePeriod(month=a.month, year=args.year or today.year, group_by='month')),
-        (lambda a: a.year is not None,  lambda a: TimePeriod(year=args.year, group_by='year')),
-        (lambda a: a.all_month,         lambda a: TimePeriod(year=args.year or today.year, group_by='month')),
+        (lambda a: a.all,               lambda a: TimePeriod(group_by='all')),
         (lambda a: a.all_year,          lambda a: TimePeriod(group_by='year')),
-        (lambda a: a.all,               lambda a: TimePeriod(group_by='month')),
+        (lambda a: a.all_month,         lambda a: TimePeriod(year=a.year or today.year, group_by='month')),
+        (lambda a: a.today,             lambda a: TimePeriod(month=today.month, year=today.year, group_by='month')),
+        (lambda a: a.month is not None, lambda a: TimePeriod(month=a.month, year=a.year or today.year, group_by='month')),
+        (lambda a: a.year is not None,  lambda a: TimePeriod(year=a.year, group_by='year')),
     ]
 
     for args_exist, filter_time in TIME_TABLE:
         if args_exist(args):
             return filter_time(args)
     return TimePeriod()
+
+
+def _sanity_check_args(args, parser):
+    standalone_args = [args.all, args.all_year, args.today]
+    if sum(bool(mode) for mode in standalone_args) > 1:
+        parser.error("--all, --all-year and --today are mutually exclusive arguments.")
+
+    if args.month is not None or args.year is not None:
+        if args.all or args.all_year or args.today:
+            parser.error("This option cannot be used with --month/--year.")
 
 
 def parse_args():
@@ -536,6 +545,8 @@ def parse_args():
                         help="Get the scoreboard for each years + each months of every years")
 
     args = parser.parse_args()
+
+    _sanity_check_args(args, parser)
     return args
 
 
