@@ -100,7 +100,7 @@ def setup_compatible_font():
     handle missing glyph.
     Depends on the fonts installed on your system.
     """
-    plt.rcParams['svg.fonttype'] = 'path'
+    plt.rcParams['svg.fonttype'] = 'none'
 
     # NOTE: (Linux) Emoji font compatible with Matplotlib
     _add_custom_fonts()
