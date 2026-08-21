@@ -591,6 +591,9 @@ def parse_args():
     parser.add_argument('--all', required=False, action='store_true', default=False,
                         help="Get the scoreboard for each years + each months of every years")
 
+    parser.add_argument('--export-html', required=False, action='store_true', default=False,
+                        help="View all your generated scoreboards from your browser")
+
     args = parser.parse_args()
 
     _sanity_check_args(args, parser)
@@ -639,8 +642,12 @@ def main():
     try:
         os.makedirs(OUTPUT_DIR)
         parse_entries(entries_date, args.top, time_period, pbar)
+
+        if args.export_html:
+            export_res_html()
     except Exception as err:
         logging.exception(f"Error while parsing entries: {err}")
+
 
     pbar.n = pbar.total
     pbar.refresh()
