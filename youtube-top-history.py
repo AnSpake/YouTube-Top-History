@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import json
+import glob
 import logging
 import argparse
 import calendar
@@ -42,6 +43,7 @@ FONT_MAYBE_COMPATIBLE = [
 
 CUSTOM_FONT_DIR = "extra-fonts"
 OUTPUT_DIR = "ytb-top-results"
+HTML_EXPORT_NAME = "index.html"
 SKIP_WORDS = {
     "en": "Viewed",
     "fr": "Vous avez consulté"
@@ -173,6 +175,51 @@ class TimePeriod:
             groups[key][(entry['title'], entry['author'], entry['url'])] += 1
 
         return groups
+
+
+def export_res_html():
+    """
+    """
+    if os.path.exists(OUTPUT_DIR):
+        svgs = sorted(glob.glob(os.path.join(OUTPUT_DIR, "top_*.svg")))
+
+        if not svgs:
+            raise Exception(f"Could not found any SVG figures inside result folder: {OUTPUT_DIR}.")
+
+        html_sections = []
+        for svg in svgs:
+            with open(svg, 'r', encoding='utf-8') as file:
+                svg_content = file.read()
+
+            # Remove XML prolog
+            # svg_content = re.sub(r'^<\?xml.*?\?>\s*', '', svg_content, flags=re.DOTALL)
+            title = os.path.splitext(os.path.basename(svg))[0]
+            html_sections.append(f'<section class="figure">\n<h2>{title}</h2>\n{svg_content}\n</section>')
+
+        html = f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Youtube Top History</title>
+<style>
+    body {{ font-family: sans-serif; background: #fafafa; margin: 2rem; }}
+    section.figure {{ background: #fff; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0, 15); }}
+    section.figure.svg {{  max-width: 100%; height: auto; display: block; }}
+    h1 {{ margin-bottom: 1.5rem; }}
+    h2 {{ font-size: 1rem; color: #555; margin-top: 0; }}
+</style>
+<body>
+<h1>Youtube Top History</h1>
+{''.join(html_sections)}
+</body>
+</html>"""
+
+    output_html = os.path.join(OUTPUT_DIR, HTML_EXPORT_NAME)
+    with open(output_html, 'w', encoding='utf-8') as file:
+        file.write(html)
+
+    logging.info(f"SVG compiled inside in html at {OUTPUT_DIR}/{HTML_EXPORT_NAME}")
 
 
 def underline_title_link_svg(output_path):
