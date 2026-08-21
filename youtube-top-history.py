@@ -202,13 +202,21 @@ def export_res_html():
 <meta charset="utf-8">
 <title>Youtube Top History</title>
 <style>
-    body {{ font-family: sans-serif; background: #fafafa; margin: 2rem; }}
-    section.figure {{ background: #fff; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0, 15); }}
-    section.figure.svg {{  max-width: 100%; height: auto; display: block; }}
-    h1 {{ margin-bottom: 1.5rem; }}
+    html {{ background: linear-gradient(90deg, #EEACEA 0%, #94BBE9 100%); }}
+
+    body {{ font-family: sans-serif;
+            margin: 2rem; }}
+
+    section.figure {{ background: #fff; border-radius: 8px; padding: 1rem 1rem;
+                        margin-bottom: 2rem; text-align: center;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }}
+
+    section.figure svg {{  max-width: 100%; height: auto; display: block; }}
+
+    h1 {{ text-align: center; }}
     h2 {{ font-size: 1rem; color: #555; margin-top: 0; }}
 </style>
+</head>
 <body>
 <h1>Youtube Top History</h1>
 {''.join(html_sections)}
